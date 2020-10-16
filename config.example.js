@@ -5,6 +5,9 @@ module.exports = {
     contact: "me@smitop.com",
     // ways of sending email (one will be randomly selected each time)
     sendingMethods: [
+        {
+            id: "smtp"
+        }
     ],
     // way of receiving email, uncomment exactly one:
 

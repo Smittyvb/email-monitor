@@ -6,5 +6,8 @@ Checks for email outages: whenever email-monitor sends you an email, your system
 yarn
 cp config.example.js config.js
 # modify config.js...
+./init.sh
+# modify harakaconf/config/smtp.ini...
+# change the port from 25 to 5870
 node index.js
 ```
