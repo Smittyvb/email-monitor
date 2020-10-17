@@ -13,3 +13,4 @@ methods=PLAIN,LOGIN
 
 [users]
 emon=$HARAKA_PW" > harakaconf/config/auth_flat_file.ini
+sudo chmod -R 777 /var/spool/haraka/quarantine
