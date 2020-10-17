@@ -51,11 +51,13 @@ async function sendCheck(check) {
 
 setInterval(() => {
     config.checks.forEach(check => {
-        const matching = checks.filter(sentCheck => sendCheck.to === check).sort((a, b) => a.time - b.time).reverse();
+        const matching = checks.filter(sentCheck => sentCheck.to === check.to).sort((a, b) => a.time - b.time).reverse();
         if (matching.length === 0) {
+            console.log("checking since never checked");
             sendCheck(check);
         } else {
-            const gap = Date.now() - matching[0].time;
+            const gap = Date.now() - matching[0].at;
+            console.log("check", gap, check.interval);
             if (gap > check.interval) sendCheck(check);
         }
         fs.writeFileSync("../checks.json", JSON.stringify(checks));
@@ -70,6 +72,5 @@ setInterval(() => {
         })
     });
 }, 10000);
-
 
 app.listen(8080);
