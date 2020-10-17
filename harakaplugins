@@ -7,6 +7,9 @@
 #
 # To see the help docs for a particular plugin, run 'haraka -h plugin.name'
 
+# Our plugin
+emonprercpt
+
 #status
 #process_title
 # Log to syslog (see 'haraka -h syslog')
