@@ -5,10 +5,10 @@ const app = express();
 
 let config;
 try {
-    config = require("./config.json");
+    config = require("../config.json");
 } catch (e) {
     console.warn("Falling back to example config! Only do this for testing purposes.");
-    config = require("./config.example.json");
+    config = require("../config.example.json");
 }
 
 console.log("Started email-monitor backend");

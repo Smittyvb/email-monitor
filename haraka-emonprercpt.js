@@ -1,6 +1,9 @@
-exports.register = function() { this.register_hook("rcpt", "emonprercpt"); };
+exports.register = function() { this.register_hook("queue", "emonprercpt"); };
 
 exports.emonprercpt = function (next, connection, params) {
-    connection.notes.quarantine = 1;
+    if (!connection.relaying) {
+        connection.notes.quarantine = 1;
+        connection.notes.quarantine_action = [ OK, "Saved email to disk" ];
+    }
     next();
 };
