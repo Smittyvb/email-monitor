@@ -3,7 +3,7 @@ const nodemailer = require("nodemailer");
 
 const HAR_USER = "emon";
 const HAR_PW = fs.readFileSync(__dirname + "/../harakapw.txt", "utf-8").trim();
-const HOSTNAME = fs.readFileSync(__dirname + "/../../harakaconf/config/me", "utf-8").trim();
+const HOSTNAME = fs.readFileSync("/etc/hostname", "utf-8").trim();
 
 async function sendOutbound(toEmail, subject, body) {
     let transporter = nodemailer.createTransport({
@@ -16,7 +16,7 @@ async function sendOutbound(toEmail, subject, body) {
         },
     });
     let info = await transporter.sendMail({
-        from: '"Fred Foo 👻" <foo@upbuddy.smitop.com>', // sender address
+        from: `"Email monitor" <emon@${HOSTNAME}>`, // sender address
         to: toEmail, // list of receivers
         subject: subject, // Subject line
         text: body, // plain text body
@@ -27,4 +27,4 @@ async function sendOutbound(toEmail, subject, body) {
 
 }
 
-sendOutbound("smitty@vanbodegom.ca", "hi test", "Hi there! this is the body");
+module.exports = sendOutbound;
