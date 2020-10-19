@@ -2,6 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const fs = require("fs");
 const mailparser = require("mailparser");
+const { sendOutbound } = require("./sendOutbound");
 
 const app = express();
 
@@ -43,11 +44,13 @@ To: ${check.to}, inteval: every ${check.interval} milliseconds\n${
 
 async function sendCheck(check) {
     console.log("pretending to send check...");
-    checks.push({
+    const toSend = {
         ...check,
         at: Date.now(),
         status: "pending"
-    });
+    };
+    checks.push(toSend);
+    sendOutbound(check.to, "email-monitor check", JSON.stringify(toSend));
 }
 
 async function handleInbound(email) {
@@ -95,4 +98,4 @@ setInterval(() => {
     });
 }, 10000);
 
-app.listen(8080);
+app.listen(80);

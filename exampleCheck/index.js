@@ -1,7 +1,11 @@
 const express = require("express");
 const bodyParser = require("body-parser");
+const sgMail = require("@sendgrid/mail");
+const fs = require("fs");
+const { send } = require("@sendgrid/mail");
 
-const app = express();
+// assumes we're running on same host as backend, in practice change this to the backend's hostname
+const HOSTNAME = fs.readFileSync("/etc/hostname", "utf-8").trim();
 
 let config;
 try {
@@ -11,10 +15,39 @@ try {
     config = require("../config.example.js");
 }
 
+sgMail.setApiKey(config.sgKey);
+
+const app = express();
+
 // Example check script
-app.post("/sg", bodyParser.text(), (req, res) => {
-    console.log("inbound from SG", req.body);
+app.post("/sg", bodyParser.text({type: "*/*"}), (req, res) => {
+    console.log("inbound from SG");
     res.status(204).send();
+    // lazy way to extract json
+    let sentJson = req.body.match(/Content-Disposition: form-data; name="text"(\n|\r)*(.*)/);
+    if (sentJson) {
+        sentJson = sentJson[2];
+    } else {
+        return console.log("regex fail", req.body);
+    }
+    let json;
+    try {
+        json = JSON.parse(sentJson);
+    } catch (e) {
+        console.log("failed to parse", sentJson);
+        return;
+    }
+    console.log("got json", sentJson);
+    const msg = {
+        to: `emon@${HOSTNAME}`,
+        from: "emon-send@sg.upbuddy.smitop.com", // Use the email address or domain you verified with Sendgrid
+        subject: "Emon response",
+        text: {
+            responseTime: Date.now(),
+            orig: json,
+        },
+    };
+    sgMail.send(msg);
 });
 
 app.listen(8082);

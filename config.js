@@ -9,5 +9,6 @@ module.exports = {
             to: "upbuddy@sg.upbuddy.smitop.com",
             interval: 10 * 60 * 1000, // every 10 minutes
         }
-    ]
+    ],
+    sgKey: "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"
 };
