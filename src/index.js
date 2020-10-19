@@ -2,7 +2,7 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const fs = require("fs");
 const mailparser = require("mailparser");
-const { sendOutbound } = require("./sendOutbound");
+const sendOutbound = require("./sendOutbound");
 
 const app = express();
 
@@ -10,7 +10,7 @@ let config;
 try {
     config = require("../config.js");
 } catch (e) {
-    console.warn("Falling back to example config! Only do this for testing purposes.");
+    console.log("Falling back to example config! Only do this for testing purposes.");
     config = require("../config.example.js");
 }
 
@@ -43,33 +43,41 @@ To: ${check.to}, inteval: every ${check.interval} milliseconds\n${
 });
 
 async function sendCheck(check) {
-    console.log("pretending to send check...");
     const toSend = {
         ...check,
         at: Date.now(),
         status: "pending"
     };
     checks.push(toSend);
-    sendOutbound(check.to, "email-monitor check", JSON.stringify(toSend));
+    await sendOutbound(check.to, "email-monitor check", JSON.stringify(toSend));
 }
 
 async function handleInbound(email) {
-    const firstMatch = email.matchAll(/<=mailcheck=>(.*)<=mailcheck=>/gs).next();
-    if (firstMatch.value) {
-        const contents = firstMatch.value[0];
+    const parsedEmail = await mailparser.simpleParser(email, {
+        skipTextToHtml: true,
+        skipTextLinks: true,
+    });
+    console.log(parsedEmail.text);
+    const firstMatch = parsedEmail.text.match(/<=mailcheck=>(.*)<=mailcheck=>/s);
+    if (firstMatch) {
+        const contents = firstMatch[1];
         let json;
         try {
             json = JSON.parse(contents);
         } catch (e) {
-            console.warn("got invalid JSON", json);
+            console.log("got invalid JSON", json);
             return;
         }
-        if (!json.orig) return console.warn("no orig");
-        const checksIdx = checks.filter(check => check.to === json.orig.to && json.orig.at === check.at)[0];
-        if (!checksIdx) return console.warn("ignoring check with invalid orig");
-        checks[checksIdx].status = "good";
-        checks[checksIdx].roundTripDuration = Date.now() - json.orig.to;
-        checks[checksIdx].received = json;
+        if (!json.orig) return console.log("no orig");
+        const checksIdxData = checks
+            .map((check, idx) => ({ ...check, idx }))
+            .filter(check => (check.to === json.orig.to) && (check.at === json.orig.at))[0];
+        if (!checksIdxData) return console.log("ignoring check with invalid orig");
+        checks[checksIdxData.idx].status = "good";
+        checks[checksIdxData.idx].roundTripDuration = Date.now() - json.orig.to;
+        checks[checksIdxData.idx].received = json;
+    } else {
+        console.log("couldn't find <=mailcheck=>");
     }
 }
 

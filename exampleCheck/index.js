@@ -2,7 +2,6 @@ const express = require("express");
 const bodyParser = require("body-parser");
 const sgMail = require("@sendgrid/mail");
 const fs = require("fs");
-const { send } = require("@sendgrid/mail");
 
 // assumes we're running on same host as backend, in practice change this to the backend's hostname
 const HOSTNAME = fs.readFileSync("/etc/hostname", "utf-8").trim();
@@ -20,7 +19,7 @@ sgMail.setApiKey(config.sgKey);
 const app = express();
 
 // Example check script
-app.post("/sg", bodyParser.text({type: "*/*"}), (req, res) => {
+app.post("/sg", bodyParser.text({type: "*/*"}), async (req, res) => {
     console.log("inbound from SG");
     res.status(204).send();
     // lazy way to extract json
@@ -42,12 +41,13 @@ app.post("/sg", bodyParser.text({type: "*/*"}), (req, res) => {
         to: `emon@${HOSTNAME}`,
         from: "emon-send@sg.upbuddy.smitop.com", // Use the email address or domain you verified with Sendgrid
         subject: "Emon response",
-        text: {
+        text: "<=mailcheck=>" + JSON.stringify({
             responseTime: Date.now(),
             orig: json,
-        },
+        }) + "<=mailcheck=>",
     };
-    sgMail.send(msg);
+    const sendResult = await sgMail.send(msg);
+    console.log("sendResult", sendResult);
 });
 
 app.listen(8082);
