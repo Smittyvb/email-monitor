@@ -1,6 +1,7 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const fs = require("fs");
+const mailparser = require("mailparser");
 
 const app = express();
 
@@ -45,8 +46,28 @@ async function sendCheck(check) {
     checks.push({
         ...check,
         at: Date.now(),
-        status: "sent"
+        status: "pending"
     });
+}
+
+async function handleInbound(email) {
+    const firstMatch = email.matchAll(/<=mailcheck=>(.*)<=mailcheck=>/gs).next();
+    if (firstMatch.value) {
+        const contents = firstMatch.value[0];
+        let json;
+        try {
+            json = JSON.parse(contents);
+        } catch (e) {
+            console.warn("got invalid JSON", json);
+            return;
+        }
+        if (!json.orig) return console.warn("no orig");
+        const checksIdx = checks.filter(check => check.to === json.orig.to && json.orig.at === check.at)[0];
+        if (!checksIdx) return console.warn("ignoring check with invalid orig");
+        checks[checksIdx].status = "good";
+        checks[checksIdx].roundTripDuration = Date.now() - json.orig.to;
+        checks[checksIdx].received = json;
+    }
 }
 
 setInterval(() => {
@@ -68,6 +89,7 @@ setInterval(() => {
         emails.forEach(emailPath => {
             const email = fs.readFileSync(`/var/spool/haraka/quarantine/${quarDir}/${emailPath}`, "utf-8");
             console.log("got email", email);
+            handleInbound(email);
             fs.unlinkSync(`/var/spool/haraka/quarantine/${quarDir}/${emailPath}`);
         })
     });
