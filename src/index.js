@@ -34,9 +34,9 @@ ${
     config.checks.map(check => 
 `\
 To: ${check.to}, inteval: every ${check.interval} milliseconds\n${
-    checks.filter(sentCheck => sentCheck.to === check.to).map(sentCheck =>
+    [...checks.filter(sentCheck => sentCheck.to === check.to)].reverse().map(sentCheck =>
 `\
-  Check at ${sentCheck.at}: ${sentCheck.status}
+  Check at ${new Date(sentCheck.at).toLocaleString("en-CA")}: ${sentCheck.status}
 `).join("")}`)}`;
     res.contentType("text/plain")
     res.send(text);
